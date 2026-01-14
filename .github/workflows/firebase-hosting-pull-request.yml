@@ -20,3 +20,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_EXPENSETRACKER_DF857 }}
           projectId: expensetracker-df857
+          node-version-file: ".nvmrc"
