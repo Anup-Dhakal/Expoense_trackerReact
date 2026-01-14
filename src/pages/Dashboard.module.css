@@ -19,12 +19,6 @@
   font-size: 28px;
 }
 
-.subtitle {
-  margin: 6px 0 0;
-  font-size: 14px;
-  color: var(--muted);
-}
-
 .headerActions {
   display: flex;
   gap: 12px;
@@ -101,19 +95,9 @@
   background: var(--primary-hover);
 }
 
-.outlineButton {
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: #ffffff;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.outlineButton:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+.button:focus-visible {
+  outline: 3px solid var(--primary-soft);
+  outline-offset: 2px;
 }
 
 .smallButton {
@@ -129,6 +113,11 @@
 .smallButton:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.smallButton:focus-visible {
+  outline: 3px solid var(--primary-soft);
+  outline-offset: 2px;
 }
 
 .dangerButton {

@@ -1,22 +1,25 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { signup } from "../lib/auth.js";
 import styles from "./Auth.module.css";
 
-
 export default function Signup() {
-  const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
+  const [info, setInfo] = useState("");
 
-  function onSubmit(e) {
-  e.preventDefault();
-  setErr("");
-  signup({ email, password })
-    .then(() => nav("/app"))
-    .catch((ex) => setErr(ex?.message || "Signup failed"));
-}
+  async function onSubmit(e) {
+    e.preventDefault();
+    setErr("");
+    setInfo("");
+    try {
+      await signup({ email, password });
+      setInfo("Account created. Check your email to verify before logging in.");
+    } catch (ex) {
+      setErr(ex?.message || "Signup failed");
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -48,6 +51,7 @@ export default function Signup() {
             />
           </label>
           {err ? <p className={styles.error}>{err}</p> : null}
+          {info ? <p className={styles.success}>{info}</p> : null}
           <button className={styles.button}>Create account</button>
         </form>
 

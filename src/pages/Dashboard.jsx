@@ -1,7 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logout } from "../lib/auth.js";
-import { addExpense, removeExpense, subscribeExpenses } from "../lib/expenses.remote.js";
+import {
+  addExpense,
+  removeExpense,
+  subscribeExpenses,
+} from "../lib/expenses.remote.js";
+import styles from "./Dashboard.module.css";
 
 export default function Dashboard({ user }) {
   const nav = useNavigate();
@@ -53,35 +58,35 @@ export default function Dashboard({ user }) {
   }
 
   return (
-    <div style={styles.page}>
-      <header style={styles.header}>
-        <h2>Expense Tracker</h2>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <span style={{ fontSize: 14 }}>{user.email}</span>
-          <button style={styles.smallBtn} onClick={onLogout}>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <h2 className={styles.title}>Expense Tracker</h2>
+        <div className={styles.headerActions}>
+          <span className={styles.userEmail}>{user?.email ?? ""}</span>
+          <button className={styles.smallButton} onClick={onLogout}>
             Logout
           </button>
         </div>
       </header>
 
-      <div style={styles.grid}>
-        <div style={styles.card}>
-          <h3>Add Expense</h3>
-          <form onSubmit={onAdd} style={styles.form}>
-            <label style={styles.label}>
+      <div className={styles.grid}>
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Add Expense</h3>
+          <form onSubmit={onAdd} className={styles.form}>
+            <label className={styles.label}>
               Date
               <input
-                style={styles.input}
+                className={styles.input}
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </label>
 
-            <label style={styles.label}>
+            <label className={styles.label}>
               Amount
               <input
-                style={styles.input}
+                className={styles.input}
                 inputMode="decimal"
                 placeholder="e.g. 250"
                 value={amount}
@@ -89,10 +94,10 @@ export default function Dashboard({ user }) {
               />
             </label>
 
-            <label style={styles.label}>
+            <label className={styles.label}>
               Category
               <select
-                style={styles.input}
+                className={styles.input}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -106,43 +111,43 @@ export default function Dashboard({ user }) {
               </select>
             </label>
 
-            <label style={styles.label}>
+            <label className={styles.label}>
               Note
               <input
-                style={styles.input}
+                className={styles.input}
                 placeholder="optional"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
             </label>
 
-            <button style={styles.button}>Add</button>
+            <button className={styles.button}>Add</button>
           </form>
         </div>
 
-        <div style={styles.card}>
-          <h3>Filter (by date)</h3>
-          <div style={styles.form}>
-            <label style={styles.label}>
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Filter (by date)</h3>
+          <div className={styles.form}>
+            <label className={styles.label}>
               From
               <input
-                style={styles.input}
+                className={styles.input}
                 type="date"
                 value={from}
                 onChange={(e) => setFrom(e.target.value)}
               />
             </label>
-            <label style={styles.label}>
+            <label className={styles.label}>
               To
               <input
-                style={styles.input}
+                className={styles.input}
                 type="date"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
               />
             </label>
             <button
-              style={styles.smallBtn}
+              className={styles.smallButton}
               type="button"
               onClick={() => {
                 setFrom("");
@@ -153,36 +158,40 @@ export default function Dashboard({ user }) {
             </button>
           </div>
 
-          <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "16px 0" }} />
+          <hr className={styles.divider} />
 
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div className={styles.summaryRow}>
             <strong>Total</strong>
             <strong>{total}</strong>
           </div>
 
-          <p style={{ fontSize: 12, color: "#666", marginTop: 6 }}>
+          <p className={styles.summaryNote}>
             Showing {items.length} entries
           </p>
         </div>
       </div>
 
-      <div style={styles.card}>
-        <h3>Expenses</h3>
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>Expenses</h3>
         {items.length === 0 ? (
-          <p style={{ color: "#666" }}>No expenses yet.</p>
+          <p className={styles.empty}>No expenses yet.</p>
         ) : (
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className={styles.expenseList}>
             {items.map((x) => (
-              <div key={x.id} style={styles.row}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>
-                    {x.category} — {x.amount}
+              <div key={x.id} className={styles.expenseRow}>
+                <div className={styles.expenseInfo}>
+                  <div className={styles.expenseTitle}>
+                    <span>{x.category}</span>
+                    <span className={styles.expenseAmount}>{x.amount}</span>
                   </div>
-                  <div style={{ fontSize: 12, color: "#666" }}>
+                  <div className={styles.expenseMeta}>
                     {x.date} {x.note ? `• ${x.note}` : ""}
                   </div>
                 </div>
-                <button style={styles.smallBtn} onClick={() => onDelete(x.id)}>
+                <button
+                  className={`${styles.smallButton} ${styles.dangerButton}`}
+                  onClick={() => onDelete(x.id)}
+                >
                   Delete
                 </button>
               </div>
@@ -193,16 +202,3 @@ export default function Dashboard({ user }) {
     </div>
   );
 }
-
-const styles = {
-  page: { maxWidth: 1000, margin: "0 auto", padding: 20 },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  grid: { display: "grid", gap: 20, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", marginBottom: 20 },
-  card: { border: "1px solid #ddd", borderRadius: 12, padding: 16 },
-  form: { display: "grid", gap: 10, marginTop: 10 },
-  label: { display: "grid", gap: 6, fontSize: 14 },
-  input: { padding: 10, borderRadius: 10, border: "1px solid #ccc" },
-  button: { padding: 10, borderRadius: 10, border: "1px solid #ccc" },
-  smallBtn: { padding: "8px 10px", borderRadius: 10, border: "1px solid #ccc" },
-  row: { display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #eee", borderRadius: 12, padding: 12 },
-};

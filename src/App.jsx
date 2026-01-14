@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import { observeAuth } from "./lib/auth.js";
 
 function ProtectedRoute({ user, children }) {
-  if (user === undefined) return null; // loading
+  if (user === undefined) return null;
   if (!user) return <Navigate to="/login" replace />;
+  if (!user.emailVerified) return <Navigate to="/login" replace />;
   return children;
 }
 
