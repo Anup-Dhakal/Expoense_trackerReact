@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signup } from "../lib/auth.js";
+import styles from "./Auth.module.css";
 
 export default function Signup() {
   const nav = useNavigate();
@@ -20,44 +21,42 @@ export default function Signup() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h2>Signup</h2>
-        <form onSubmit={onSubmit} style={styles.form}>
-          <input
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            style={styles.input}
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {err ? <p style={styles.error}>{err}</p> : null}
-          <button style={styles.button}>Create account</button>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <p className={styles.kicker}>Expense Tracker</p>
+          <h2 className={styles.title}>Create your account</h2>
+          <p className={styles.subtitle}>Start tracking and stay in control.</p>
+        </div>
+
+        <form onSubmit={onSubmit} className={styles.form}>
+          <label className={styles.label}>
+            Email
+            <input
+              className={styles.input}
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <label className={styles.label}>
+            Password
+            <input
+              className={styles.input}
+              placeholder="Create a password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </label>
+          {err ? <p className={styles.error}>{err}</p> : null}
+          <button className={styles.button}>Create account</button>
         </form>
-        <p>
-          Have an account? <Link to="/login">Login</Link>
+
+        <p className={styles.helper}>
+          Have an account? <Link to="/login" className={styles.link}>Login</Link>
         </p>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: { minHeight: "100vh", display: "grid", placeItems: "center" },
-  card: {
-    width: 360,
-    padding: 20,
-    border: "1px solid #ddd",
-    borderRadius: 12,
-  },
-  form: { display: "grid", gap: 10, marginTop: 10 },
-  input: { padding: 10, borderRadius: 10, border: "1px solid #ccc" },
-  button: { padding: 10, borderRadius: 10, border: "1px solid #ccc" },
-  error: { color: "crimson", margin: 0 },
-};
