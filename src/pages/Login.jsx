@@ -3,22 +3,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { login } from "../lib/auth.js";
 import styles from "./Auth.module.css";
 
+
+
 export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
 
-  function onSubmit(e) {
-    e.preventDefault();
-    setErr("");
-    try {
-      login({ email, password });
-      nav("/app");
-    } catch (ex) {
-      setErr(ex.message || "Login failed");
-    }
-  }
+function onSubmit(e) {
+  e.preventDefault();
+  setErr("");
+  login({ email, password })
+    .then(() => nav("/app"))
+    .catch((ex) => setErr(ex?.message || "Login failed"));
+}
 
   return (
     <div className={styles.page}>

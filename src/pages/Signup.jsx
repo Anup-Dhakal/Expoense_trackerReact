@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { signup } from "../lib/auth.js";
 import styles from "./Auth.module.css";
 
+
 export default function Signup() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
@@ -10,15 +11,12 @@ export default function Signup() {
   const [err, setErr] = useState("");
 
   function onSubmit(e) {
-    e.preventDefault();
-    setErr("");
-    try {
-      signup({ email, password });
-      nav("/app");
-    } catch (ex) {
-      setErr(ex.message || "Signup failed");
-    }
-  }
+  e.preventDefault();
+  setErr("");
+  signup({ email, password })
+    .then(() => nav("/app"))
+    .catch((ex) => setErr(ex?.message || "Signup failed"));
+}
 
   return (
     <div className={styles.page}>
