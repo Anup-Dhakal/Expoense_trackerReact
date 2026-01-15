@@ -10,11 +10,16 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth } from "./firebase";
+import { ensureUserProfile } from "./users";
 
 const googleProvider = new GoogleAuthProvider();
 
 export async function signup({ email, password }) {
   const { user } = await createUserWithEmailAndPassword(auth, email, password);
+  await ensureUserProfile(user.uid, {
+    email: user.email,
+    displayName: user.displayName,
+  });
   await sendEmailVerification(user);
   await signOut(auth);
   return user;
@@ -23,6 +28,10 @@ export async function signup({ email, password }) {
 export async function login({ email, password }) {
   const { user } = await signInWithEmailAndPassword(auth, email, password);
   await reload(user);
+  await ensureUserProfile(user.uid, {
+    email: user.email,
+    displayName: user.displayName,
+  });
   return user;
 }
 
@@ -54,5 +63,9 @@ export function observeAuth(callback) {
 
 export async function signInWithGoogle() {
   const { user } = await signInWithPopup(auth, googleProvider);
+  await ensureUserProfile(user.uid, {
+    email: user.email,
+    displayName: user.displayName,
+  });
   return user;
 }

@@ -6,6 +6,13 @@ import {
   removeExpense,
   subscribeExpenses,
 } from "../lib/expenses.remote.js";
+import { subscribeUserGroups } from "../lib/groups.js";
+import { subscribeUserProfile } from "../lib/users.js";
+import BudgetManager from "../components/BudgetManager.jsx";
+import BudgetProgress from "../components/BudgetProgress.jsx";
+import CreateGroup from "../components/CreateGroup.jsx";
+import GroupSelector from "../components/GroupSelector.jsx";
+import PendingInvites from "../components/PendingInvites.jsx";
 import styles from "./Dashboard.module.css";
 
 const CATEGORY_META = {
@@ -20,6 +27,8 @@ const CATEGORY_META = {
 
 const CHART_DAYS = 7;
 
+const CATEGORIES = Object.keys(CATEGORY_META);
+
 export default function Dashboard({ user }) {
   const nav = useNavigate();
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -29,6 +38,10 @@ export default function Dashboard({ user }) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Food");
   const [note, setNote] = useState("");
+  const [groupIds, setGroupIds] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [activeGroupId, setActiveGroupId] = useState(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -40,14 +53,53 @@ export default function Dashboard({ user }) {
 
   useEffect(() => {
     if (!user?.uid) return;
-    const unsub = subscribeExpenses(user.uid, { from, to }, setItems);
+    const unsub = subscribeUserProfile(user.uid, (profile) => {
+      setGroupIds(profile?.groups || []);
+    });
     return () => unsub();
-  }, [user?.uid, from, to]);
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!groupIds.length) return;
+    const unsub = subscribeUserGroups(groupIds, setGroups);
+    return () => unsub();
+  }, [groupIds]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  const resolvedGroupId = useMemo(
+    () => (activeGroupId && groupIds.includes(activeGroupId) ? activeGroupId : null),
+    [activeGroupId, groupIds]
+  );
+
+  const displayedGroups = useMemo(
+    () => (groupIds.length ? groups : []),
+    [groupIds.length, groups]
+  );
+
+  const activeGroup = useMemo(
+    () => displayedGroups.find((group) => group.id === resolvedGroupId) || null,
+    [displayedGroups, resolvedGroupId]
+  );
+
+  const currentRole = activeGroup?.members?.[user?.uid] || "viewer";
+  const canManageBudgets = !resolvedGroupId || currentRole === "admin";
+  const canAddExpense = !resolvedGroupId || currentRole !== "viewer";
+
+  const workspaceLabel = activeGroup ? activeGroup.name : "Personal";
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsub = subscribeExpenses(
+      { uid: user.uid, groupId: resolvedGroupId },
+      { from, to },
+      setItems
+    );
+    return () => unsub();
+  }, [user?.uid, resolvedGroupId, from, to]);
 
   const total = useMemo(
     () => items.reduce((sum, x) => sum + Number(x.amount || 0), 0),
@@ -119,22 +171,29 @@ export default function Dashboard({ user }) {
 
   async function onAdd(e) {
     e.preventDefault();
+    if (!canAddExpense) return;
     const num = Number(amount);
     if (!date || !num) return;
 
-    await addExpense(user.uid, {
+    const payload = {
       date,
       amount: num,
       category,
       note,
-    });
+    };
+
+    if (resolvedGroupId) {
+      payload.addedBy = user.uid;
+    }
+
+    await addExpense({ uid: user.uid, groupId: resolvedGroupId }, payload);
 
     setAmount("");
     setNote("");
   }
 
   async function onDelete(id) {
-    await removeExpense(user.uid, id);
+    await removeExpense({ uid: user.uid, groupId: resolvedGroupId }, id);
   }
 
   async function onLogout() {
@@ -146,6 +205,25 @@ export default function Dashboard({ user }) {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   }
 
+  function handleGroupChange(groupId) {
+    setActiveGroupId(groupId);
+  }
+
+  function handleCreateGroup() {
+    setShowCreateGroup(true);
+  }
+
+  function handleGroupCreated(groupId) {
+    setShowCreateGroup(false);
+    setActiveGroupId(groupId);
+  }
+
+  function handleGroupSettings() {
+    if (resolvedGroupId) {
+      nav(`/app/groups/${resolvedGroupId}`);
+    }
+  }
+
   const isDark = theme === "dark";
 
   return (
@@ -153,7 +231,7 @@ export default function Dashboard({ user }) {
       <header className={styles.header}>
         <div>
           <p className={styles.kicker}>Expense Tracker</p>
-          <h2 className={styles.title}>Your Dashboard</h2>
+          <h2 className={styles.title}>{workspaceLabel} Dashboard</h2>
           <p className={styles.subtitle}>Track, review, and grow your savings.</p>
         </div>
         <div className={styles.headerActions}>
@@ -174,6 +252,32 @@ export default function Dashboard({ user }) {
           </button>
         </div>
       </header>
+
+      <section className={styles.groupSection}>
+        <GroupSelector
+          groups={displayedGroups}
+          value={resolvedGroupId}
+          onChange={handleGroupChange}
+          onCreate={handleCreateGroup}
+        />
+        {resolvedGroupId ? (
+          <button
+            className={styles.secondaryButton}
+            type="button"
+            onClick={handleGroupSettings}
+          >
+            Group settings
+          </button>
+        ) : null}
+        {showCreateGroup ? (
+          <CreateGroup
+            userId={user.uid}
+            onCreated={handleGroupCreated}
+            onCancel={() => setShowCreateGroup(false)}
+          />
+        ) : null}
+        <PendingInvites user={user} onAccepted={handleGroupChange} />
+      </section>
 
       <section className={styles.summaryGrid}>
         <div className={`${styles.card} ${styles.heroCard}`}>
@@ -224,6 +328,8 @@ export default function Dashboard({ user }) {
             Small habits make big wins.
           </div>
         </div>
+
+        <BudgetProgress groupId={resolvedGroupId} expenses={items} />
       </section>
 
       <section className={styles.grid}>
@@ -237,6 +343,7 @@ export default function Dashboard({ user }) {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                disabled={!canAddExpense}
               />
             </label>
 
@@ -248,6 +355,7 @@ export default function Dashboard({ user }) {
                 placeholder="e.g. 250"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                disabled={!canAddExpense}
               />
             </label>
 
@@ -257,6 +365,7 @@ export default function Dashboard({ user }) {
                 className={styles.input}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
+                disabled={!canAddExpense}
               >
                 <option>Food</option>
                 <option>Transport</option>
@@ -275,10 +384,19 @@ export default function Dashboard({ user }) {
                 placeholder="optional"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
+                disabled={!canAddExpense}
               />
             </label>
 
-            <button className={styles.button}>Add expense</button>
+            {!canAddExpense ? (
+              <p className={styles.permissionNote}>
+                You only have viewer access for this group.
+              </p>
+            ) : null}
+
+            <button className={styles.button} disabled={!canAddExpense}>
+              Add expense
+            </button>
           </form>
         </div>
 
@@ -324,6 +442,13 @@ export default function Dashboard({ user }) {
 
           <p className={styles.summaryNote}>Showing {items.length} entries</p>
         </div>
+
+        <BudgetManager
+          groupId={resolvedGroupId}
+          userId={user.uid}
+          categories={CATEGORIES}
+          canManage={canManageBudgets}
+        />
       </section>
 
       <section className={styles.card}>
@@ -344,6 +469,18 @@ export default function Dashboard({ user }) {
             {items.map((x) => {
               const meta = CATEGORY_META[x.category] || CATEGORY_META.Other;
               const tagClass = styles[meta.tagClass];
+              const addedByLabel = resolvedGroupId
+                ? x.addedBy === user.uid
+                  ? "Added by you"
+                  : x.addedBy
+                  ? `Added by ${x.addedBy.slice(0, 6)}...`
+                  : "Added by member"
+                : null;
+              const canDeleteExpense =
+                !resolvedGroupId ||
+                currentRole === "admin" ||
+                (currentRole === "editor" && x.addedBy === user.uid);
+
               return (
                 <div key={x.id} className={styles.expenseRow}>
                   <div className={styles.expenseInfo}>
@@ -358,15 +495,20 @@ export default function Dashboard({ user }) {
                     </div>
                     <div className={styles.expenseMeta}>
                       {x.date} {x.note ? `• ${x.note}` : ""}
+                      {addedByLabel ? ` • ${addedByLabel}` : ""}
                     </div>
                   </div>
-                  <button
-                    className={`${styles.smallButton} ${styles.dangerButton}`}
-                    onClick={() => onDelete(x.id)}
-                    type="button"
-                  >
-                    Delete
-                  </button>
+                  {canDeleteExpense ? (
+                    <button
+                      className={`${styles.smallButton} ${styles.dangerButton}`}
+                      onClick={() => onDelete(x.id)}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                  ) : (
+                    <span className={styles.permissionPill}>View only</span>
+                  )}
                 </div>
               );
             })}

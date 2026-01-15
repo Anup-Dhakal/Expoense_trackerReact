@@ -1,0 +1,67 @@
+rules_version = "2";
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function groupDoc(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId));
+    }
+
+    function groupRole(groupId) {
+      return groupDoc(groupId).data.members[request.auth.uid];
+    }
+
+    function isGroupMember(groupId) {
+      return isSignedIn() && groupRole(groupId) != null;
+    }
+
+    function isGroupAdmin(groupId) {
+      return groupRole(groupId) == "admin";
+    }
+
+    function isGroupEditor(groupId) {
+      return groupRole(groupId) == "admin" || groupRole(groupId) == "editor";
+    }
+
+    match /users/{userId} {
+      allow read, create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
+
+      match /expenses/{expenseId} {
+        allow read, create, update, delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /groups/{groupId} {
+      allow read: if isGroupMember(groupId);
+      allow create: if isSignedIn()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.members[request.auth.uid] == "admin";
+      allow update, delete: if isGroupAdmin(groupId);
+
+      match /expenses/{expenseId} {
+        allow read: if isGroupMember(groupId);
+        allow create: if isGroupEditor(groupId)
+          && request.resource.data.addedBy == request.auth.uid;
+        allow update, delete: if isGroupAdmin(groupId)
+          || (isGroupEditor(groupId) && resource.data.addedBy == request.auth.uid);
+      }
+
+      match /budgets/{budgetId} {
+        allow read: if isGroupMember(groupId);
+        allow create, update, delete: if isGroupAdmin(groupId);
+      }
+    }
+
+    match /invites/{inviteId} {
+      allow create: if isSignedIn() && request.resource.data.invitedBy == request.auth.uid;
+      allow read, update, delete: if isSignedIn() && (
+        request.auth.token.email == resource.data.email
+        || request.auth.uid == resource.data.invitedBy
+      );
+    }
+  }
+}

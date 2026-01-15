@@ -11,8 +11,12 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
-export function subscribeExpenses(uid, { from, to }, callback) {
-  const colRef = collection(db, "users", uid, "expenses");
+export function subscribeExpenses(target, { from, to }, callback) {
+  const { uid, groupId } =
+    typeof target === "string" ? { uid: target, groupId: null } : target;
+  const colRef = groupId
+    ? collection(db, "groups", groupId, "expenses")
+    : collection(db, "users", uid, "expenses");
 
   let q = query(colRef, orderBy("date", "desc")); // date as "YYYY-MM-DD"
 
@@ -26,12 +30,20 @@ export function subscribeExpenses(uid, { from, to }, callback) {
   });
 }
 
-export async function addExpense(uid, expense) {
-  const colRef = collection(db, "users", uid, "expenses");
+export async function addExpense(target, expense) {
+  const { uid, groupId } =
+    typeof target === "string" ? { uid: target, groupId: null } : target;
+  const colRef = groupId
+    ? collection(db, "groups", groupId, "expenses")
+    : collection(db, "users", uid, "expenses");
   await addDoc(colRef, { ...expense, createdAt: Timestamp.now() });
 }
 
-export async function removeExpense(uid, expenseId) {
-  const ref = doc(db, "users", uid, "expenses", expenseId);
+export async function removeExpense(target, expenseId) {
+  const { uid, groupId } =
+    typeof target === "string" ? { uid: target, groupId: null } : target;
+  const ref = groupId
+    ? doc(db, "groups", groupId, "expenses", expenseId)
+    : doc(db, "users", uid, "expenses", expenseId);
   await deleteDoc(ref);
 }
