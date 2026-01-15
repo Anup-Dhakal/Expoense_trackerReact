@@ -121,6 +121,63 @@
   border-radius: 4px;
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.divider span {
+  padding: 0 12px;
+}
+
+.googleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.googleButton:hover {
+  background: #f8fafc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.googleButton:focus-visible {
+  outline: 3px solid var(--primary-soft);
+  outline-offset: 2px;
+}
+
+.googleButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.googleIcon {
+  width: 18px;
+  height: 18px;
+}
+
 @media (max-width: 540px) {
   .card {
     padding: 24px 20px;

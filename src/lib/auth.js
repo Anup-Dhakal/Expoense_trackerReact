@@ -1,13 +1,17 @@
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
   reload,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
 } from "firebase/auth";
 import { auth } from "./firebase";
+
+const googleProvider = new GoogleAuthProvider();
 
 export async function signup({ email, password }) {
   const { user } = await createUserWithEmailAndPassword(auth, email, password);
@@ -46,4 +50,9 @@ export function logout() {
 
 export function observeAuth(callback) {
   return onAuthStateChanged(auth, callback);
+}
+
+export async function signInWithGoogle() {
+  const { user } = await signInWithPopup(auth, googleProvider);
+  return user;
 }
